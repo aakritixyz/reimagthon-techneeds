@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { trackGroups, tracks } from "@/lib/mentorship";
@@ -42,11 +43,15 @@ export default function TrackCatalog() {
         {visibleTracks.map((track) => (
           <li key={track.slug}>
             <Link className={styles.track} href={`/mentorship/${track.slug}`} aria-labelledby={`track-${track.slug}`} aria-describedby={`intro-${track.slug} meta-${track.slug}`}>
+              <div className={styles.trackVisual}>
+                <Image src={track.image} alt={track.imageAlt} fill sizes="(max-width: 620px) 92vw, (max-width: 940px) 46vw, 380px" />
+              </div>
               <div className={styles.trackTop}>
                 <span className={styles.tileIcon}><Icon name={track.icon} /></span>
                 <span className={styles.number}>{track.group}</span>
               </div>
               <h3 id={`track-${track.slug}`}>{track.name}</h3>
+              <p className={styles.trackMentor}>By {track.mentor}</p>
               <p id={`intro-${track.slug}`}>{track.description}</p>
               <div className={styles.trackFooter}>
                 <div className={styles.trackMeta} id={`meta-${track.slug}`}><span>{track.level}</span><span>{track.focus}</span></div>

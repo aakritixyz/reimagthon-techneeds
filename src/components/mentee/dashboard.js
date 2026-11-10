@@ -1,193 +1,45 @@
 'use client';
-
-import { API_BASE_URL } from "@/lib/api";
-import { useEffect, useState } from 'react';
-import axios from 'axios';
-import { useRouter } from 'next/navigation';
-import QuizAttempt from './QuizAttempt';
-import ProjectSubmissionForm from './ProjectSubmission';
-import './mentee.css'
-
-export default function MenteeDashboard() {
-  const [mentee, setMentee] = useState(null);
-  const [activeQuizResource, setActiveQuizResource] = useState(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      const token = localStorage.getItem('menteeToken');
-      if (!token) return router.push('/mentee');
-
-      try {
-        const res = await axios.get(`${API_BASE_URL}/api/m/dashboard`, {
-          headers: { 'x-auth-token': token }
-        });
-        setMentee(res.data);
-      } catch (err) {
-        alert('Session expired. Please login again.');
-        localStorage.removeItem('menteeToken');
-        router.push('/mentee');
-      }
-    };
-
-    fetchDashboard();
-  }, []);
-
-  const handleComplete = async (resourceId) => {
-    try {
-      const token = localStorage.getItem('menteeToken');
-      const res = await axios.post(`${API_BASE_URL}/api/m/resources/${resourceId}/complete`, {}, {
-        headers: { 'x-auth-token': token }
-      });
-      alert(res.data.message);
-      const updatedMentee = { ...mentee };
-      updatedMentee.programs.forEach((program) => {
-        program.resources.forEach((resource) => {
-          if (resource._id === resourceId) {
-            resource.completed = true;
-            resource.score = res.data.score;
-            resource.completedOn = new Date().toISOString();
-          }
-        });
-      });
-      setMentee(updatedMentee);
-      // window.location.reload();
-    } catch (err) {
-      alert(err.response?.data?.error || 'Something went wrong.');
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('menteeToken');
-    router.push('/mentee');
-  };
-
-  if (!mentee) return (<div className="load-wrapp">
-      <div className="load-4">
-        <div className="ring-1"></div>
-      </div>
-    </div>);
-  // components/MenteeDashboard.js
-
-  return (
-    <div className="mentee-dashboard">
-      <button onClick={handleLogout} className="logout-button">Logout</button>
-      <div className="mentee-header">
-        <h1>Welcome, {mentee.name} 👋</h1>
-        <div className="stat-cards">
-  <div className="stat-card">
-    <h3>Rank</h3>
-    <span>🏅 {mentee.rank}</span>
-  </div>
-  <div className="stat-card">
-    <h3>Total Score</h3>
-    <span>🏆 {mentee.totalScore}</span>
-  </div>
-  <div className="stat-card">
-    <h3>Streak</h3>
-    <span>🔥 {mentee.streak} days</span>
-  </div>
-</div>
-
-      </div>
-  
-      {mentee.programs.map(program => (
-        <div key={program._id} className="program-card">
-          <h2>{program.name}</h2>
-  
-          {program.resources.length === 0 ? (
-            <p>No resources yet!</p>
-          ) : (
-            <div className="responsive-table-wrapper">
-            <table className="responsive-table">
-  <thead>
-    <tr>
-      <th>Title</th>
-      <th>Type</th>
-      <th>Score</th>
-      <th>Status</th>
-      <th>Deadline</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {program.resources.map((res) => (
-      <tr key={res._id}>
-        <td>
-          <strong>{res.title}</strong><br />
-          <a href={res.url} target="_blank" rel="noopener noreferrer">🔗 View</a>
-        </td>
-        <td>{res.type}</td>
-        <td>{res.maxScore}</td>
-        <td>{res.isLocked ? '🔒 Locked' : '✅ Unlocked'}</td>
-        <td>{res.deadline}</td>
-        <td className="actions">
-          {!res.completed && res.type === 'quiz' && !res.isLocked && (
-            activeQuizResource === res._id ? (
-              <QuizAttempt
-                resourceId={res._id}
-                onComplete={(score) => {
-                  const updated = { ...mentee };
-                  updated.programs.forEach((p) =>
-                    p.resources.forEach((r) => {
-                      if (r._id === res._id) {
-                        r.completed = true;
-                        r.score = score;
-                        r.completedOn = new Date().toISOString();
-                      }
-                    })
-                  );
-                  setMentee(updated);
-                  setActiveQuizResource(null);
-                }}
-              />
-            ) : (
-              <button onClick={() => setActiveQuizResource(res._id)}>Attempt Quiz</button>
-            )
-          )}
-
-          {!res.completed && res.type === 'project' && !res.isLocked && (
-            <ProjectSubmissionForm
-              resourceId={res._id}
-              onSubmitted={(score) => {
-                const updated = { ...mentee };
-                updated.programs.forEach((p) =>
-                  p.resources.forEach((r) => {
-                    if (r._id === res._id) {
-                      r.completed = true;
-                      r.score = score;
-                      r.completedOn = new Date().toISOString();
-                    }
-                  })
-                );
-                setMentee(updated);
-              }}
-            />
-          )}
-
-          {res.completed ? (
-            <div className="completed-info">
-              ✅ Completed <br />
-              On: {new Date(res.completedOn).toLocaleDateString()}<br />
-              Score: {res.score}
-            </div>
-          ) : (
-            !res.isLocked && (
-              <div>
-                <input type="checkbox" onChange={() => handleComplete(res._id)} /> Mark as Completed
-              </div>
-            )
-          )}
-        </td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-</div>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-  
+import {useEffect,useState} from 'react';
+import {useRouter} from 'next/navigation';
+import Link from 'next/link';
+import {menteeRequest} from '@/lib/api';
+import WorkspaceBrand from '../shell/WorkspaceBrand';
+import MenteeLogin from './login';
+import DemoNotice from '../shell/DemoNotice';
+import ResourceViewer from './ResourceViewer';
+import CohortBoard from './CohortBoard';
+import {Empty,Status} from '../admin/shared';
+import {istDate} from '../mentor/helpers';
+import {Due,useClock} from './LearningShared';
+import {resourceStatus} from './learning';
+import styles from '../admin.module.css';
+import ms from './learning.module.css';
+const tabs=[['overview','01','My learning'],['scores','02','Scores & feedback'],['leaderboard','03','Cohort leaderboard'],['profile','04','My profile']];
+export default function MenteeDashboard({initialProgram='',initialView='overview',initialResource=''}){
+  const router=useRouter(),now=useClock();
+  const[data,setData]=useState(null),[ready,setReady]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+  const[programId,setProgramId]=useState(initialProgram),[view,setView]=useState(initialView),[resourceId,setResourceId]=useState(initialResource),[type,setType]=useState('all'),[status,setStatus]=useState('all'),[revision,setRevision]=useState(0);
+  const[name,setName]=useState(''),[showOnBoard,setShowOnBoard]=useState(true);
+  async function load(){const result=await menteeRequest('/dashboard',null);setData(result);setProgramId(current=>result.programs.some(p=>p._id===current)?current:result.programs[0]?._id||'');return result;}
+  useEffect(()=>{let alive=true;(async()=>{try{try{await menteeRequest('/session',null);}catch(err){const legacy=localStorage.getItem('menteeToken');if(err.status!==401||!legacy)throw err;await menteeRequest('/session/migrate',legacy,{method:'POST'});localStorage.removeItem('menteeToken');}const result=await menteeRequest('/dashboard',null);if(alive){setData(result);setProgramId(current=>result.programs.some(p=>p._id===current)?current:result.programs[0]?._id||'');}}catch(err){if(err.code==='PASSWORD_CHANGE_REQUIRED')router.replace('/change-password');else if(alive&&err.status!==401)setError(err.message);}finally{if(alive)setReady(true);}})();return()=>{alive=false;};},[router]);
+  useEffect(()=>{if(!data)return;let alive=true;const refresh=()=>{if(document.hidden||busy)return;menteeRequest('/dashboard',null).then(result=>{if(alive)setData(result);}).catch(err=>{if(!alive)return;if(err.code==='PASSWORD_CHANGE_REQUIRED')router.replace('/change-password');else if(err.status===401){setData(null);setError('Your session has expired. Sign in again.');}});};const timer=setInterval(refresh,30000);window.addEventListener('focus',refresh);return()=>{alive=false;clearInterval(timer);window.removeEventListener('focus',refresh);};},[!!data,busy,router]);
+  useEffect(()=>{if(data){setName(data.name);setShowOnBoard(data.showOnBoard);}},[data?.name,data?.showOnBoard]);
+  async function run(action,message=''){setBusy(true);setError('');setNotice('');try{const result=await action();setRevision(n=>n+1);setNotice(message);try{await load();}catch{setError('Saved successfully. Refresh the workspace to update your summary.');}return result||{ok:true};}catch(err){setError(err.message);if(err.code==='PASSWORD_CHANGE_REQUIRED')router.replace('/change-password');else if(err.status===401)setData(null);return null;}finally{setBusy(false);}}
+  const program=data?.programs.find(p=>p._id===programId),resources=program?.resources||[];
+  const completed=resources.filter(r=>r.completed).length,progress=resources.length?Math.round(completed/resources.length*100):0;
+  function open(resource){setResourceId(resource._id);setView('resource');setError('');setNotice('');}
+  function switchProgram(value){setProgramId(value);setView('overview');setResourceId('');setError('');setNotice('');}
+  const upcoming=resources.filter(r=>!r.completed&&!r.isLocked&&+new Date(r.deadline)>(now||Date.now())).slice(0,4);
+  const visible=resources.filter(r=>(type==='all'||r.type===type)&&(status==='all'||resourceStatus(r,now||Date.now())===status));
+  if(!ready)return <main id="main-content" data-workspace="mentee" className={styles.workspace}><div className={ms.loading} role="status">Opening your learning workspace…</div></main>;
+  if(!data)return <>{error&&<p className={styles.error} role="alert">{error}</p>}<MenteeLogin/></>;
+  return <main id="main-content" data-workspace="mentee" className={styles.workspace}><div className={styles.dashboard}><aside data-workspace-sidebar className={styles.sidebar}><div className={styles.sidebarBrand}><WorkspaceBrand role="Mentee" dark/></div><div className={ms.identity}><span>{data.name.split(' ').map(s=>s[0]).slice(0,2).join('')}</span><div><strong>{data.name}</strong><small>YOUR TECH JOURNEY</small></div></div><nav aria-label="Mentee workspace">{tabs.map(([id,n,title])=><button key={id} disabled={busy} aria-current={view===id||(view==='resource'&&id==='overview')?'page':undefined} onClick={()=>{setView(id);setError('');setNotice('');}}><span>{n}</span>{title}</button>)}</nav><div className={styles.sidebarBottom}><span className={styles.eyebrow}>PROGRESS, ONE STEP AT A TIME.</span><p>You don’t have to know everything. Just keep showing up.</p><button disabled={busy} onClick={async()=>{setBusy(true);try{await menteeRequest('/session',null,{method:'DELETE'});localStorage.removeItem('menteeToken');window.location.assign('/mentee');}catch(err){setError(err.message);}finally{setBusy(false);}}}>Sign out ↗</button></div></aside><div className={styles.content}><div className={styles.topline}><span>WORKSPACE / {view==='resource'?'LEARNING RESOURCE':tabs.find(t=>t[0]===view)?.[2].toUpperCase()}</span><button disabled={busy} onClick={()=>run(async()=>({}),'Your progress is up to date.')}>{busy?'Working…':'↻ Refresh'}</button><span className={styles.adminIdentity}><i/> Mentee</span></div>{error&&<div role="alert" className={styles.error}>{error}</div>}{notice&&<div role="status" className={styles.notice}>✓ {notice}</div>}
+    <DemoNotice role="mentee"/>
+    {data.programs.length>1?<div className={ms.programPicker}><label>Your program<select value={programId} disabled={busy} onChange={e=>switchProgram(e.target.value)}>{data.programs.map(p=><option key={p._id} value={p._id}>{p.name} / {p.cohort||'Cohort'}</option>)}</select></label><span className={styles.eyebrow}>{data.programs.length} ENROLMENTS</span></div>:program&&<p className={ms.singleProgram}>{program.name} <span>{program.cohort}</span></p>}
+    {view==='overview'&&<><header className={styles.pageHeading}><span className={styles.eyebrow}>YOUR NEXT CHAPTER IS ALREADY UNDERWAY</span><h1>Hey, {data.name.split(' ')[0]}.<br/><em>What will you build today?</em></h1><p>A little learning. A little making. A little closer to where you want to be.</p></header><div className={ms.progressStrip}><div><span className={styles.eyebrow}>YOUR LEARNING PATH</span><strong>{completed} <small>/ {resources.length} steps completed</small></strong></div><div className={ms.progressTrack} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress} aria-label="Program learning progress"><span style={{width:`${progress}%`}}/></div><span>{progress}%</span></div><div className={styles.stats}>{[['Points earned',program?.totalScore||0,'Every completed step counts'],['Cohort rank',program?.rank?`#${program.rank}`:'—',showOnBoard?'Growing alongside your peers':'Your board visibility is private'],['Current streak',program?.streak||0,'Consecutive days of progress'],['Awaiting feedback',resources.filter(r=>r.completed&&!r.verified&&r.type==='project').length,'Projects with your mentor']].map(([label,value,copy],i)=><article key={label}><span className={styles.eyebrow}>0{i+1} / {label}</span><strong>{value}</strong><p>{copy}</p></article>)}</div><section className={styles.card}><div className={styles.sectionTitle}><h2>Next on your path</h2><span className={styles.eyebrow}>DUE SOON</span></div>{upcoming.length?<div className={ms.dueList}>{upcoming.map(r=><button key={r._id} disabled={busy} onClick={()=>open(r)}><span className={ms.typeMark}>{r.type==='video'?'↗':r.type==='quiz'?'?':'{}'}</span><div><strong>{r.title}</strong><small>{r.type.toUpperCase()} / {r.maxScore} PTS</small></div><Due deadline={r.deadline} now={now}/><b>→</b></button>)}</div>:<Empty title="A little breathing room.">You have no upcoming work right now. Explore your resources or revisit your feedback.</Empty>}</section><div className={styles.toolbar}><div className={styles.chips} aria-label="Resource type">{[['all','All'],['video','Videos'],['quiz','Quizzes'],['project','Projects']].map(([id,label])=><button key={id} aria-pressed={type===id} onClick={()=>setType(id)}>{label}</button>)}</div><div className={ms.statusFilters} aria-label="Resource status">{['all','PENDING','SUBMITTED','GRADED','MISSED'].map(id=><button key={id} aria-pressed={status===id} onClick={()=>setStatus(id)}>{id==='all'?'All statuses':id.toLowerCase()}</button>)}</div></div>{visible.length?<div className={styles.programGrid}>{visible.map((r,i)=>{const state=resourceStatus(r,now||Date.now()),disabled=state==='MISSED'||r.isLocked;return <article key={r._id} className={`${styles.programCard} ${state==='MISSED'?ms.missed:''}`}><div className={styles.sectionTitle}><span className={styles.eyebrow}>{String(i+1).padStart(2,'0')} / {r.type}</span><Status>{r.isLocked?'LOCKED':state}</Status></div><h2>{r.title}</h2><p>{r.description||'A focused step in your technical journey.'}</p><div className={ms.resourcePoints}><strong>{r.verified?r.score:r.maxScore}</strong><span>{r.verified?`/ ${r.maxScore} earned points`:'available points'}</span></div><Due deadline={r.deadline} now={now}/>{r.feedback&&<p className={ms.feedbackPreview}>{r.feedback}</p>}<div className={styles.cardActions}><button className={styles.textButton} disabled={busy||disabled} onClick={()=>open(r)}>{state==='GRADED'?'View work & feedback ↗':state==='SUBMITTED'?'View or update project →':r.isLocked?'Locked by mentor':state==='MISSED'?'Deadline passed':r.type==='video'?'Watch module →':r.type==='quiz'?'Open quiz →':'Build & submit →'}</button><span className={styles.eyebrow}>{state==='GRADED'?'✓ COMPLETE':state==='SUBMITTED'?'WITH YOUR MENTOR':''}</span></div></article>;})}</div>:<Empty title={resources.length?'No resources match this view.':'Your cohort is getting ready.'}>{resources.length?'Try a different resource type or status.':'Published videos, quizzes, and projects will appear here when your mentor shares them.'}</Empty>}</>}
+    {view==='resource'&&program&&<ResourceViewer key={resourceId} resourceId={resourceId} program={program} now={now} revision={revision} busy={busy} run={run} back={()=>setView('overview')}/>}
+    {view==='scores'&&<><header className={styles.pageHeading}><span className={styles.eyebrow}>SEE HOW FAR YOU’VE COME</span><h1>Small wins. Real progress.</h1><p>Your scores, submissions, and mentor feedback for this program.</p></header><div className={ms.scoreHeadline}><strong>{program?.totalScore||0}<span>POINTS EARNED</span></strong><p>{resources.filter(r=>r.completed).length} submitted · {resources.filter(r=>r.verified).length} graded</p></div>{resources.some(r=>r.completed)?resources.filter(r=>r.completed).sort((a,b)=>+new Date(b.scoredOn||b.submittedOn)-+new Date(a.scoredOn||a.submittedOn)).map(r=><article key={r._id} className={styles.card}><div className={styles.sectionTitle}><div><span className={styles.eyebrow}>{r.type} / {istDate(r.scoredOn||r.submittedOn)}</span><h2 className={ms.spacedHeading}>{r.title}</h2></div><Status>{r.verified?`${r.score} / ${r.maxScore} PTS`:'AWAITING REVIEW'}</Status></div>{r.feedback?<div className={ms.feedback}><span>MENTOR FEEDBACK</span><p>{r.feedback}</p></div>:<p className={styles.muted}>{r.verified?'A completed step in your learning journey.':'Your mentor will share a score and feedback after reviewing your project.'}</p>}<button className={styles.textButton} onClick={()=>open(r)}>Open submission →</button></article>):<Empty title="Your first milestone is ahead.">Complete a resource to start your score history.</Empty>}</>}
+    {view==='leaderboard'&&(program?<CohortBoard program={program} revision={revision}/>:<Empty title="Your cohort is on its way.">Your program leaderboard will appear after enrolment.</Empty>)}
+    {view==='profile'&&<><header className={styles.pageHeading}><span className={styles.eyebrow}>YOUR SPACE IN THE COMMUNITY</span><h1>Your journey. Your profile.</h1><p>Keep your details up to date and choose how you appear on the board.</p></header><form className={styles.card} onSubmit={async e=>{e.preventDefault();await run(()=>menteeRequest('/profile',null,{method:'PATCH',data:{name,showOnBoard}}),'Profile updated. Your leaderboard visibility is saved.');}}><fieldset disabled={busy}><div className={styles.formGrid}><label>Full name<input value={name} required minLength={2} maxLength={80} onChange={e=>setName(e.target.value)}/></label><label>Email address<input value={data.email} readOnly/></label></div><label className={styles.checkbox}><input type="checkbox" checked={showOnBoard} onChange={e=>setShowOnBoard(e.target.checked)}/>Show my first name and last initial on public and cohort leaderboards.</label><p className={styles.help}>Opting out hides you from boards across all programs. Your scores and progress stay available privately.</p><button className="tn-button" disabled={busy}>Save profile →</button></fieldset></form><section className={styles.card}><div className={styles.sectionTitle}><h2>Your enrolments</h2><Link className={styles.textButton} href="/change-password">Change password ↗</Link></div>{data.programs.map(p=><div className={ms.enrolment} key={p._id}><div><strong>{p.name}</strong><span>{p.cohort}</span></div><code>{p.enrollmentNumber}</code></div>)}</section></>}
+    <footer className={styles.workspaceFooter}><span>TECHNEEDS IGDTUW / MENTEE</span><span>Learn a little. Build something. Repeat.</span></footer></div></div></main>;
 }

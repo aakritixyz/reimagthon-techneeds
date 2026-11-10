@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { tracks } from "@/lib/mentorship";
@@ -29,9 +30,13 @@ export default async function TrackPage({ params }) {
           <span className={styles.tileIcon}><Icon name={track.icon} /></span>
           <p className={styles.number}>{track.group}</p>
           <h1>{track.name}</h1>
+          <p className={styles.trackMentor}>By {track.mentor}</p>
           <p>{track.description}</p>
           <div className={styles.trackMeta}><span>{track.level}</span><span>{track.focus}</span></div>
         </header>
+        <div className={styles.trackDetailVisual}>
+          <Image src={track.image} alt={track.imageAlt} fill sizes="(max-width: 880px) 94vw, 880px" />
+        </div>
         <div className={styles.trackDetails}>
           <section>
             <h2>What you’ll practice</h2>

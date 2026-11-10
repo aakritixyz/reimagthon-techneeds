@@ -47,10 +47,9 @@ export default function ProjectSubmissionForm({ resourceId, onSubmitted }) {
         />
       </div>
       <div>
-        <label>Live Project Link:</label>
+        <label>Live Project Link (optional):</label>
         <input
           type="url"
-          required
           value={deployedLink}
           onChange={(e) => setdeployedLink(e.target.value)}
           placeholder="https://your-project.live"
@@ -63,7 +62,8 @@ export default function ProjectSubmissionForm({ resourceId, onSubmitted }) {
           required
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="Write at least 300 words about your project"
+          maxLength={2000}
+          placeholder="Describe what you built and what you learned"
         />
       </div>
       <button type="submit" disabled={submitting}>

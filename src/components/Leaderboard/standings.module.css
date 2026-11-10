@@ -108,3 +108,7 @@
   .row > .streak { grid-column: 3; justify-self: end; font-size: 10px; }
   .row .score { font-size: 15px; }
 }
+
+.sourceNote { margin: -9px 0 21px; color: #405d76; font-size: 13px; line-height: 1.6; }
+.sourceNote a { color: #215e90; text-decoration: underline; text-underline-offset: 3px; }
+.filters button:disabled { opacity: .45; cursor: not-allowed; }

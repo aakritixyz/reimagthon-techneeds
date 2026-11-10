@@ -3,6 +3,11 @@ const mongoose = require('mongoose');
 const ResourceSchema = new mongoose.Schema({
   title: { type: String, required: true },
   type: { type: String, enum: ['video', 'quiz', 'project'], required: true },
+  description: { type: String, default: '' },
+  instructions: { type: String, default: '' },
+  publishedAt: { type: Date, default: null },
+  addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Mentor' },
+  revision: { type: Number, default: 0 },
   url: { type: String },
   deadline: { type: Date, default: () => new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
   maxScore: { type: Number, default: 300 },

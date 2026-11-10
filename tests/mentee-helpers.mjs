@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { videoEmbed, safeUrl, resourceStatus } from '../src/components/mentee/learning.js';
+assert.equal(videoEmbed('https://youtu.be/dQw4w9WgXcQ'),'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
+assert.equal(videoEmbed('https://youtube.com.attacker.test/watch?v=dQw4w9WgXcQ'),null);
+assert.equal(videoEmbed('javascript:alert(1)'),null);
+assert.equal(videoEmbed('https://vimeo.com/12345678'),'https://player.vimeo.com/video/12345678');
+assert.equal(videoEmbed('https://drive.google.com/file/d/abcDEF123/view'),'https://drive.google.com/file/d/abcDEF123/preview');
+assert.equal(safeUrl('javascript:alert(1)'),null);
+assert.equal(resourceStatus({deadline:'2020-01-01'},Date.now()),'MISSED');
+assert.equal(resourceStatus({completed:true,type:'project',verified:false}),'SUBMITTED');
+assert.equal(resourceStatus({completed:true,type:'quiz'}),'GRADED');
+console.log('PASS safe video embeds and derived resource states.');

@@ -1,0 +1,11 @@
+'use client';
+import { useEffect,useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { menteeRequest } from '@/lib/api';
+import styles from '@/components/admin.module.css';
+export default function ChangePassword() {
+  const [current,setCurrent] = useState(''), [password,setPassword] = useState(''), [confirm,setConfirm] = useState(''), [busy,setBusy] = useState(false), [error,setError] = useState('');
+  const router=useRouter();
+  useEffect(() => { menteeRequest('/session',null).catch(err=>{if(err.status===401&&!localStorage.getItem('menteeToken'))router.replace('/mentee');}); },[router]);
+  return <main id="main-content" className={styles.workspace}><div className={styles.onboard}><span className={styles.eyebrow}>MAKE THIS ACCOUNT YOURS</span><h1>A fresh password.<br />Your own workspace.</h1><p>Change the initial password shared by your mentor before continuing.</p><form className={styles.card} onSubmit={async event => { event.preventDefault(); setError(''); if (password !== confirm) { setError('Your new passwords do not match.'); return; } setBusy(true); try { const result = await menteeRequest('/change-password',localStorage.getItem('menteeToken'),{ method:'POST',data:{ currentPassword:current,newPassword:password } }); localStorage.removeItem('menteeToken'); setCurrent('');setPassword('');setConfirm('');router.replace('/dashboard'); } catch(err) { setError(err.message); if(err.status===401) {localStorage.removeItem('menteeToken');router.replace('/mentee');} } finally {setBusy(false);} }}>{error && <p className={styles.error} role="alert">{error}</p>}<label>Current password<input type="password" autoComplete="current-password" required value={current} onChange={e=>setCurrent(e.target.value)} /></label><label>New password<input type="password" autoComplete="new-password" minLength={10} maxLength={72} required value={password} onChange={e=>setPassword(e.target.value)} /></label><label>Confirm new password<input type="password" autoComplete="new-password" minLength={10} maxLength={72} required value={confirm} onChange={e=>setConfirm(e.target.value)} /></label><p className={styles.help}>Use at least 10 characters. Your old sessions will end when this password changes.</p><button className="tn-button" disabled={busy}>{busy?'Saving your password…':'Save password & continue →'}</button></form></div></main>;
+}

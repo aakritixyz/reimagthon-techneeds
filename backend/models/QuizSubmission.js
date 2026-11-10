@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const AnswerSchema = new mongoose.Schema({
+  questionId: { type: mongoose.Schema.Types.ObjectId },
   questionIndex: Number, // Index of the question in the quiz
   selectedOptionIndex: Number
 });

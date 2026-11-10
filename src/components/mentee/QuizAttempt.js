@@ -7,7 +7,7 @@ export default function QuizAttempt({ resourceId, onComplete }) {
   const [quiz, setQuiz] = useState(null);
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const token = localStorage.getItem('menteeToken');
+  const token = typeof window !== 'undefined' ? localStorage.getItem('menteeToken') : '';
 
   useEffect(() => {
     const fetchQuiz = async () => {
@@ -54,7 +54,7 @@ export default function QuizAttempt({ resourceId, onComplete }) {
       <h2>{quiz.title}</h2>
       <p>{quiz.description}</p>
       {quiz.questions.map((q, i) => (
-        <div key={q._id} style={{ marginBottom: '1rem' }}>
+        <div key={q.id} style={{ marginBottom: '1rem' }}>
           <strong>Q{i + 1}: {q.questionText}</strong><br />
           {q.options.map((opt, j) => (
             <div key={j}>
@@ -72,7 +72,7 @@ export default function QuizAttempt({ resourceId, onComplete }) {
           ))}
         </div>
       ))}
-      <button onClick={handleSubmit}>Submit Quiz</button>
+      <button disabled={answers.some(a => a.selectedOptionIndex < 0)} onClick={handleSubmit}>Submit Quiz</button>
     </div>
   );
 }

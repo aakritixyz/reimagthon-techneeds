@@ -1,365 +1,50 @@
 "use client";
-
-import { useState, useEffect } from 'react';
-import { mentorLogin, addMentee, addResource, getMentorDetails, getProgramMentees, getProgramResources } from '../../lib/api';
-import UnverifiedProjects from './projects';
-import './mentor.css'
-
-export default function MentorPanel() {
-  const [token, setToken] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState('');
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [programs, setPrograms] = useState([]);
-  const [selectedProgram, setSelectedProgram] = useState('');
-  const [menteeName, setMenteeName] = useState('');
-  const [menteeEmail, setMenteeEmail] = useState('');
-  const [menteeCredentials, setMenteeCredentials] = useState(null);
-  const [resourceTitle, setResourceTitle] = useState('');
-  const [resourceURL, setResourceURL] = useState('');
-  const [resourceType, setResourceType] = useState('video');
-  const [deadline, setDeadline] = useState('');
-  const [maxScore, setMaxScore] = useState('');
-  const [mentees, setMentees] = useState([]);
-  const [resources, setResources] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-
-
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
-  const [revealScores, setRevealScores] = useState(false);
-  const [questions, setQuestions] = useState([]);
-
-  const addQuestion = () => {
-    setQuestions([
-      ...questions,
-      {
-        questionText: '',
-        options: ['', '', '', ''],
-        correctOptionIndex: 0,
-        marks: 1
-      }
-    ]);
-  };
-
-  const updateQuestion = (index, field, value) => {
-    const updated = [...questions];
-    updated[index][field] = value;
-    setQuestions(updated);
-  };
-
-  const updateOption = (qIndex, optIndex, value) => {
-    const updated = [...questions];
-    updated[qIndex].options[optIndex] = value;
-    setQuestions(updated);
-  };
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedProgram = localStorage.getItem('selectedProgram');
-    localStorage.removeItem('mentor');
-    if (!savedToken) return;
-
-    getMentorDetails(savedToken).then((mentor) => {
-      setToken(savedToken);
-      setPrograms(mentor.programs);
-      setLoggedIn(true);
-      if (mentor.programs.some((program) => program._id === savedProgram)) {
-        handleProgramSelect(savedProgram, savedToken);
-      }
-    }).catch((error) => {
-      if (error.status === 401) localStorage.removeItem('token');
-    });
-  }, []);
-
-  const handleLogin = async () => {
-    setIsLoading(true);
+import { useEffect, useState } from 'react';
+import { mentorRequest } from '@/lib/api';
+import { Empty, Status } from '../admin/shared';
+import Mentees from './Mentees';
+import Resources from './Resources';
+import Grading from './Grading';
+import { Activity } from '../admin/shared';
+import styles from '../admin.module.css';
+import mentorStyles from './workspace.module.css';
+import WorkspaceBrand from '../shell/WorkspaceBrand';
+import DemoNotice from '../shell/DemoNotice';
+import {IS_DEMO,DEMO_ACCOUNTS,DEMO_PASSWORD} from '@/lib/demo';
+const tabs = [['overview','01','Overview'],['mentees','02','Mentees'],['resources','03','Learning resources'],['grading','04','Review & grading'],['activity','05','Activity']];
+export default function MentorPanel({ initialProgram = '', initialView = 'overview', initialResource = '' }) {
+  const [data, setData] = useState(null), [ready, setReady] = useState(false), [busy, setBusy] = useState(false);
+  const [email, setEmail] = useState(IS_DEMO?DEMO_ACCOUNTS.mentor.email:''), [password, setPassword] = useState(IS_DEMO?DEMO_PASSWORD:''), [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(''), [notice, setNotice] = useState('');
+  const [view, setView] = useState(initialView), [programId, setProgramId] = useState(initialProgram), [resourceId, setResourceId] = useState(initialResource);
+  const [revision, setRevision] = useState(0), [activity, setActivity] = useState([]);
+  async function load() { const result = await mentorRequest('/workspace'); setData(result); setProgramId(current => result.programs.some(p => p._id === current) ? current : result.programs[0]?._id || ''); return result; }
+  useEffect(() => { let alive = true; (async () => {
     try {
-      const { token } = await mentorLogin(email, password);
-      const mentor = await getMentorDetails(token);
-      localStorage.setItem('token', token);
-      setToken(token);
-      setPrograms(mentor.programs);
-      setLoggedIn(true);
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    setToken('');
-    setLoggedIn(false);
-    localStorage.removeItem('token');
-    localStorage.removeItem('selectedProgram');
-    setSelectedProgram('');
-    setMenteeCredentials(null);
-  };
-
-  const handleAddMentee = async () => {
-    try {
-      const result = await addMentee(token, {
-        email: menteeEmail,
-        name: menteeName,
-        programId: selectedProgram,
-      });
-      setMenteeCredentials({ enrollmentNumber: result.mentee.enrollmentNumber, password: result.tempPassword });
-      setMenteeEmail('');
-      setMenteeName('');
-      await handleProgramSelect(selectedProgram);
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  const handleProgramSelect = async (programId, authToken = token) => {
-    setSelectedProgram(programId);
-    localStorage.setItem('selectedProgram', programId);
-    if (!programId) {
-      setMentees([]);
-      setResources([]);
-      return;
-    }
-    try {
-      const [menteesData, resourcesData] = await Promise.all([
-        getProgramMentees(programId, authToken),
-        getProgramResources(programId, authToken)
-      ]);
-      setMentees(menteesData);
-      setResources(resourcesData);
-    } catch (err) {
-      console.error('Failed to load program data:', err);
-      // Handle error (show toast/message)
-    }
-  };
-
-  const handleAddResource = async () => {
-    try {
-      let resourceData = {
-        title: resourceTitle,
-        type: resourceType,
-        program: selectedProgram,
-      };
-  
-      let isQuiz = false;
-  
-      if (resourceType === 'quiz') {
-        isQuiz = true;
-        const maxScore = questions.reduce((sum, q) => sum + Number(q.marks || 1), 0);
-        resourceData = {
-          ...resourceData,
-          questions,
-          startTime: startTime ? new Date(startTime).toISOString() : undefined,
-          endTime: endTime ? new Date(endTime).toISOString() : undefined,
-          revealScores,
-          maxScore
-        };
-      } else {
-        if (!deadline || maxScore === '' || Number(maxScore) < 0) {
-          throw new Error('Set a deadline and a non-negative maximum score.');
-        }
-        resourceData.url = resourceURL;
-        resourceData.deadline = new Date(deadline).toISOString();
-        resourceData.maxScore = Number(maxScore);
-      }
-  
-      await addResource(token, resourceData, isQuiz);
-      setResourceTitle('');
-      await handleProgramSelect(selectedProgram);
-      alert('Resource added!');
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-  
-  
-
-  return (
-    <>
-    <div className="container">
-      {!loggedIn ? (
-        <div className="login-container">
-        <div className="login-card">
-          <h1 className="login-title">Mentor Login</h1>
-          <p className="login-subtitle">Enter your credentials to access mentor dashboard</p>
-          
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="input-field"
-          />
-          
-          <div className="input-group">
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input-field"
-            />
-            <button 
-              type="button" 
-              className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7.028 7.028 0 0 0-2.79.588l.77.771A5.944 5.944 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.134 13.134 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755-.165.165-.337.328-.517.486l.708.709z"/>
-                  <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829l.822.822zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829z"/>
-                  <path d="M3.35 5.47c-.18.16-.353.322-.518.487A13.134 13.134 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7.029 7.029 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12-.708.708z"/>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                  <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8zM1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.134 13.134 0 0 1 1.172 8z"/>
-                  <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0z"/>
-                </svg>
-              )}
-            </button>
-          </div>
-          
-          <button
-            onClick={handleLogin}
-            disabled={isLoading}
-            className="login-button"
-          >
-            {isLoading ? (
-              <>
-                <span className="spinner">↻</span> Logging in...
-              </>
-            ) : 'Login'}
-          </button>
-        </div>
-      </div>
-      ) : (
-        <div>
-          <button className='logout-button' onClick={handleLogout}>Logout</button>
-          <div className="section">
-            <h2>Mentor Panel</h2>
-  
-            <h3>Programs</h3>
-            <select value={selectedProgram} onChange={e => handleProgramSelect(e.target.value)}>
-              <option value="">Select Program</option>
-              {programs.map(p => (
-                <option key={p._id} value={p._id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-  
-          <div className="section">
-            <h3>Add Mentee</h3>
-            <input placeholder="Email" value={menteeEmail} onChange={e => setMenteeEmail(e.target.value)} />
-            <input placeholder="Mentee Name" value={menteeName} onChange={e => setMenteeName(e.target.value)} />
-            <button onClick={handleAddMentee} disabled={!selectedProgram || !menteeEmail || !menteeName}>Generate mentee credentials</button>
-            {menteeCredentials && (
-              <div role="status">
-                <p>Enrollment number: <code>{menteeCredentials.enrollmentNumber}</code></p>
-                <p>Initial password: <code>{menteeCredentials.password}</code></p>
-                <button onClick={() => setMenteeCredentials(null)}>Hide credentials</button>
-              </div>
-            )}
-          </div>
-  
-          <div className="section">
-            <h3>Add Resource</h3>
-            <input placeholder="Resource Title" value={resourceTitle} onChange={e => setResourceTitle(e.target.value)} />
-  
-            {resourceType !== 'quiz' && (
-              <>
-                <input type="url" placeholder="Resource URL" value={resourceURL} onChange={e => setResourceURL(e.target.value)} />
-                <label>Deadline <input type="datetime-local" value={deadline} onChange={e => setDeadline(e.target.value)} /></label>
-                <label>Maximum score <input type="number" min="0" value={maxScore} onChange={e => setMaxScore(e.target.value)} /></label>
-              </>
-            )}
-  
-            <select onChange={e => setResourceType(e.target.value)} value={resourceType}>
-              <option value="video">Video</option>
-              <option value="quiz">Quiz</option>
-              <option value="project">Project</option>
-            </select>
-  
-            {resourceType === 'quiz' && (
-              <div className="quiz-section">
-                <label>Start Time:</label>
-                <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} />
-                <br/>
-                <label>End Time:</label>
-                <input type="datetime-local" value={endTime} onChange={e => setEndTime(e.target.value)} />
-                <label>Reveal Scores:</label>
-                <input type="checkbox" checked={revealScores} onChange={e => setRevealScores(e.target.checked)} />
-                <h4>Questions</h4>
-                {questions.map((q, i) => (
-                  <div key={i} className="question-block">
-                    <input placeholder="Question Text" value={q.questionText} onChange={e => updateQuestion(i, 'questionText', e.target.value)} />
-                    {q.options.map((opt, j) => (
-                      <input key={j} placeholder={`Option ${j + 1}`} value={opt} onChange={e => updateOption(i, j, e.target.value)} />
-                    ))}
-                    <label>Correct Option Index:</label>
-                    <input type="number" min="0" max="3" value={q.correctOptionIndex} onChange={e => updateQuestion(i, 'correctOptionIndex', parseInt(e.target.value))} />
-                    <label>Marks:</label>
-                    <input type="number" value={q.marks} onChange={e => updateQuestion(i, 'marks', parseInt(e.target.value))} />
-                  </div>
-                ))}
-                <button onClick={addQuestion}>+ Add Question</button>
-              </div>
-            )}
-  
-            <button onClick={handleAddResource} disabled={!selectedProgram || !resourceTitle.trim()}>Add Resource</button>
-          </div>
-  
-          {selectedProgram && (
-            <div className="section">
-              <h3>Mentees</h3>
-              {mentees.length > 0 ? (
-                <table className="responstable">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Enrollment Number</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mentees.map(mentee => (
-                      <tr key={mentee._id}>
-                        <td>{mentee.name}</td>
-                        <td>{mentee.enrollmentNumber}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : <p>No mentees in this program</p>}
-  
-              <h3>Resources</h3>
-              {resources.length > 0 ? (
-                <table className="responstable">
-                  <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Type</th>
-                      <th>URL</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resources.map(resource => (
-                      <tr key={resource._id}>
-                        <td>{resource.title}</td>
-                        <td>{resource.type}</td>
-                        <td>{resource.url || 'N/A'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : <p>No resources in this program</p>}
-            </div>
-          )}
-        <UnverifiedProjects />
-        </div>
-      )}
-    </div>
-    </>
-  );
-  
+      let result;
+      try { result = await mentorRequest('/workspace'); }
+      catch (err) { const token = localStorage.getItem('token'); if (err.status !== 401 || !token) throw err; await mentorRequest('/session/migrate', { method: 'POST', headers: { 'x-auth-token': token } }); localStorage.removeItem('token'); result = await mentorRequest('/workspace'); }
+      if (alive) { setData(result); setProgramId(current => result.programs.some(p => p._id === current) ? current : result.programs[0]?._id || ''); }
+    } catch (err) { if (alive && err.status !== 401) setError(err.message); }
+    finally { if (alive) setReady(true); }
+  })(); return () => { alive = false; }; }, []);
+  useEffect(() => { let alive = true; if (data && programId && view === 'activity') mentorRequest(`/programs/${programId}/activity`).then(rows => { if (alive) setActivity(rows); }).catch(err => { if (alive) setError(err.message); }); return () => { alive = false; }; }, [programId, view, revision]);
+  async function run(action, message = '') { setBusy(true); setError(''); setNotice(''); try { const result = await action(); setRevision(r => r+1); setNotice(message); try { await load(); } catch (refreshError) { setError('Your changes were saved, but the workspace could not refresh. Save any credentials shown below, then refresh.'); } return result || { ok: true }; } catch (err) { setError(err.message); if (err.status === 401) setData(null); return null; } finally { setBusy(false); } }
+  async function login(event) { event.preventDefault(); setBusy(true); setError(''); try { await mentorRequest('/session', { method: 'POST', data: { email, password } }); setPassword(''); localStorage.removeItem('token'); localStorage.removeItem('mentorToken'); await load(); } catch (err) { setError(err.message); } finally { setBusy(false); } }
+  const program = data?.programs.find(p => p._id === programId);
+  const locked = !!program && (program.archived || program.status === 'CLOSED');
+  function changeProgram(value) { setProgramId(value); setResourceId(''); setNotice(''); setError(''); }
+  function review(id) { setResourceId(id); setView('grading'); setNotice(''); }
+  return <main id="main-content" data-workspace="mentor" className={styles.workspace}>{!data ? <div className={styles.loginWrap}><section className={styles.loginStory}><span className={styles.eyebrow}>TECHNEEDS / MENTOR</span><h1>Guide the next wave.</h1><p>Your experience can become someone else’s starting point. Bring your cohort together, share what you know, and watch their confidence grow.</p><div className={styles.orbit} aria-hidden="true"><span>TN</span><i /><i /><i /></div><span className={styles.eyebrow}>A LITTLE GUIDANCE GOES A LONG WAY.</span></section><form className={styles.loginCard} onSubmit={login}><span className={styles.eyebrow}>YOUR MENTOR WORKSPACE</span><h2>{IS_DEMO?'Demo Mentor':'Welcome back.'}</h2><p>{IS_DEMO?'Use any email and password. Your cohorts, mentees, and grading queue are ready.':'Sign in with your invited mentor account.'}</p>{error && <div role="alert" className={styles.error}>{error}</div>}<label>Email address<input type="email" autoComplete="username" value={email} required onChange={e => setEmail(e.target.value)} /></label><label>Password<div className={mentorStyles.passwordField}><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} required onChange={e => setPassword(e.target.value)} /><button type="button" aria-label={showPassword ? 'Hide password' : 'Show password'} aria-pressed={showPassword} onClick={() => setShowPassword(s => !s)}>{showPassword ? 'Hide' : 'Show'}</button></div></label><button className="tn-button" disabled={!ready || busy}>{!ready ? 'Checking session…' : busy ? 'Signing in…' : IS_DEMO?'Sign in as Demo Mentor →':'Open mentor workspace →'}</button><small>{IS_DEMO?'No invitation or admin setup is needed for this demo.':'New here? Accept the private invitation shared by your admin to set up your account.'}</small></form></div> : <div className={styles.dashboard}><aside data-workspace-sidebar className={styles.sidebar}><div className={styles.sidebarBrand}><WorkspaceBrand role="Mentor" dark /></div><div className={mentorStyles.mentorIdentity}><span>{data.mentor.name.split(' ').map(s => s[0]).slice(0,2).join('')}</span><div><strong>{data.mentor.name}</strong><small>MENTOR / IGDTUW</small></div></div><nav aria-label="Mentor workspace">{tabs.map(([id,number,title]) => <button key={id} type="button" disabled={busy} aria-current={view === id ? 'page' : undefined} onClick={() => { setView(id); setNotice(''); setError(''); }}><span>{number}</span>{title}{id === 'grading' && program?.pendingGrading > 0 && <b>{program.pendingGrading}</b>}</button>)}</nav><div className={styles.sidebarBottom}><span className={styles.eyebrow}>GOOD GUIDANCE COMPOUNDS.</span><p>One conversation. One project. One breakthrough at a time.</p><button disabled={busy} onClick={async () => { setBusy(true); try { await mentorRequest('/session', { method: 'DELETE' }); localStorage.removeItem('token'); localStorage.removeItem('selectedProgram'); setData(null); setNotice(''); setError(''); } catch (err) { setError(err.message); } finally { setBusy(false); } }}>Sign out ↗</button></div></aside><div className={styles.content}><div className={styles.topline}><span>WORKSPACE / {tabs.find(t => t[0] === view)?.[2].toUpperCase()}</span><button disabled={busy} onClick={() => run(async () => ({}), 'Workspace refreshed.')}>{busy ? 'Working…' : '↻ Refresh'}</button><span className={styles.adminIdentity}><i /> Mentor</span></div>
+    <DemoNotice role="mentor"/>
+    {error && <div className={styles.error} role="alert">{error}</div>}{notice && <div className={styles.notice} role="status">✓ {notice}</div>}
+    <div className={mentorStyles.programPicker}><label>Your program<select value={programId} onChange={e => changeProgram(e.target.value)} disabled={busy || !data.programs.length}>{!data.programs.length && <option value="">No assigned programs</option>}{data.programs.map(p => <option value={p._id} key={p._id}>{p.name}{p.cohort ? ` / ${p.cohort}` : ''}{p.archived ? ' · Archived' : p.status === 'CLOSED' ? ' · Closed' : ''}</option>)}</select></label>{program && <Status>{program.archived ? 'ARCHIVED' : program.status || 'DRAFT'}</Status>}</div>
+    {locked && <div className={styles.warning}>This program is closed or archived. You can browse its history; ask your admin to reopen it before making changes.</div>}
+    {view === 'overview' && <><header className={styles.pageHeading}><span className={styles.eyebrow}>GUIDANCE THAT MAKES A DIFFERENCE</span><h1>Hello, {data.mentor.name.split(' ')[0]}.<br /><em>Let’s build their next step.</em></h1><p>Your cohort’s people, learning, and progress in one place.</p></header><div className={styles.stats}>{[['Mentees',program?.menteeCount || 0,'Learning alongside you'],['Learning resources',program?.resourceCount || 0,'Drafts and published modules'],['Awaiting review',program?.pendingGrading || 0,'Projects ready for feedback'],['Upcoming deadlines',program?.upcomingCount || 0,'Next deadlines in this program']].map(([label,n,copy],i) => <article key={label}><span className={styles.eyebrow}>0{i+1} / {label}</span><strong>{String(n).padStart(2,'0')}</strong><p>{copy}</p></article>)}</div><div className={styles.overviewGrid}><section className={styles.studioCallout}><span className={styles.eyebrow}>TURN KNOWLEDGE INTO MOMENTUM</span><h2>Give them something<br />great to build.</h2><p>Share a video, write a quiz, or set a project. Save your ideas as drafts and publish when you’re ready.</p><button className="tn-button tn-button-light" onClick={() => setView('resources')}>Open learning resources ↗</button><div className={styles.miniNetwork} aria-hidden="true"><span>LEARN</span><i /><span>BUILD</span></div></section><section className={styles.card}><div className={styles.sectionTitle}><h2>On the horizon</h2><span className={styles.eyebrow}>UP NEXT</span></div>{program?.upcoming.length ? program.upcoming.map(r => <button className={styles.step} key={r._id} onClick={() => review(r._id)}><span>{r.type === 'video' ? '↗' : r.type === 'quiz' ? '?' : '{}'}</span><div><strong>{r.title}</strong><p>{new Date(r.deadline).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} IST</p></div><b>↗</b></button>) : <Empty title="Room for what’s next.">Publish a resource with a future deadline to see it here.</Empty>}</section></div><section className={styles.card}><div className={styles.sectionTitle}><h2>Your programs</h2><span className={styles.eyebrow}>{data.programs.length} ASSIGNED</span></div>{!data.programs.length ? <Empty title="Your next cohort is on its way.">Once an admin assigns you to a program, it will appear here.</Empty> : data.programs.map(p => <button className={styles.step} key={p._id} onClick={() => changeProgram(p._id)}><span>{p._id === programId ? '✓' : '↗'}</span><div><strong>{p.name}</strong><p>{p.cohort || 'Cohort'} · {p.menteeCount} mentees · {p.pendingGrading} awaiting review</p></div><b>→</b></button>)}</section></>}
+    {view !== 'overview' && !program && <Empty title="No program assigned yet.">Your admin needs to assign you to a program before you can manage a cohort.</Empty>}
+    {program && view === 'mentees' && <Mentees key={programId} program={program} revision={revision} run={run} busy={busy} locked={locked} />}
+    {program && view === 'resources' && <Resources key={programId} program={program} revision={revision} run={run} busy={busy} locked={locked} review={review} />}
+    {program && view === 'grading' && <Grading key={`${programId}:${resourceId}`} program={program} initialResource={resourceId} revision={revision} run={run} busy={busy} locked={locked} />}
+    {program && view === 'activity' && <><header className={styles.pageHeading}><span className={styles.eyebrow}>THE DETAILS THAT MATTER</span><h1>Cohort activity.</h1><p>Enrolment, publishing, and grading history for this program.</p></header><section className={styles.card}><Activity entries={activity} /></section></>}
+    <footer className={styles.workspaceFooter}><span>TECHNEEDS IGDTUW / MENTOR</span><span>Small steps. Shared progress.</span></footer></div></div>}</main>;
 }

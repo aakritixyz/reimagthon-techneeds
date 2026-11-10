@@ -3,6 +3,7 @@ import "./globals.css";
 import "@/components/shell/shell.css";
 import Navbar from "@/components/navbar/navbar";
 import Footer from "@/components/footer/footer";
+import TechGuide from "@/components/guide/TechGuide";
 
 export const metadata = {
   title: "TechNeeds IGDTUW | Learn tech. Build together.",
@@ -16,6 +17,7 @@ export default function RootLayout({ children }) {
         <Navbar />
         {children}
         <Footer />
+        <TechGuide />
       </body>
     </html>
   );

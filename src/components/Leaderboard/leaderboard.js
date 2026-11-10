@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { requestOrigin } from "@/lib/api";
 import { Icon } from "../shell/icons";
 import styles from "./standings.module.css";
 
@@ -11,11 +11,11 @@ const tracks = [["all", "All tracks"], ["web", "Web"], ["dsa", "DSA"], ["ml", "M
 const pointsFormat = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 });
 const dateFormat = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
 
-function Filters({ label, options, value, onChange }) {
+function Filters({ label, options, value, onChange, disabled = false }) {
   return (
     <div className={styles.filters} role="group" aria-label={label}>
       {options.map(([key, name]) => (
-        <button key={key} type="button" aria-pressed={value === key} onClick={() => onChange(key)}>{name}</button>
+        <button key={key} type="button" aria-pressed={value === key} disabled={disabled && key !== "all"} onClick={() => onChange(key)}>{name}</button>
       ))}
     </div>
   );
@@ -145,14 +145,16 @@ export default function Leaderboard() {
   const error = response?.id === requestId && response.error;
   const hasScores = Boolean(data?.rows.length);
   const searching = Boolean(search.trim());
+  const snapshot = Boolean(data?.snapshot);
 
   useEffect(() => {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
         const token = localStorage.getItem("menteeToken");
-        const result = await fetch(`${API_BASE_URL}/api/m/leaderboard/standings?${params}`, {
+        const result = await fetch(`${requestOrigin()}/api/m/leaderboard/standings?${params}`, {
           signal: controller.signal,
+          credentials: 'include',
           headers: token ? { "x-auth-token": token } : {},
         });
         if (!result.ok) throw new Error("Unable to load standings");
@@ -198,21 +200,22 @@ export default function Leaderboard() {
             <h1>Mentee Leaderboard</h1>
             <p className={styles.intro}>See how mentees are progressing across TechNeeds cohorts.</p>
           </div>
-          {data && <p className={styles.updated}>UPDATED {dateFormat.format(new Date(data.updatedAt))} IST</p>}
+          {data && <p className={styles.updated}>{snapshot ? "IMPORTED" : "UPDATED"} {dateFormat.format(new Date(data.updatedAt))} IST</p>}
         </header>
 
         <div className={styles.controls}>
           <div className={styles.controlRow}>
-            <Filters label="Ranking period" options={periods} value={period} onChange={setPeriod} />
+            <Filters label="Ranking period" options={periods} value={snapshot ? "all" : period} onChange={setPeriod} disabled={snapshot} />
             <label className={styles.search}>
               <Icon name="search" />
               <span className="visually-hidden">Search by name</span>
               <input type="search" placeholder="Search by name" value={search} maxLength={80} onChange={(event) => setSearch(event.target.value)} />
             </label>
           </div>
-          <Filters label="Filter by track" options={tracks} value={track} onChange={setTrack} />
+          <Filters label="Filter by track" options={tracks} value={snapshot ? "all" : track} onChange={setTrack} disabled={snapshot} />
         </div>
 
+        {snapshot && <p className={styles.sourceNote}>Published lifetime scores from the <a href={data.source}>original TechNeeds leaderboard</a>. Track and period breakdowns aren’t available in this snapshot.</p>}
         {data?.you && <PersonalRank you={data.you} />}
         {!data && !error && <Skeleton />}
         {error && (

@@ -5,10 +5,7 @@ export default function Footer() {
   return (
     <footer className="tn-footer">
       <div className="tn-footer-inner">
-        <div>
-          <Link className="tn-footer-brand" href="/">TechNeeds IGDTUW</Link>
-          <p>The peer-led tech community at IGDTUW.</p>
-        </div>
+        <Link className="tn-footer-brand" href="/">TechNeeds <span>IGDTUW</span></Link>
         <nav aria-label="Footer navigation">
           <Link href="/#mentorship">Mentorship</Link>
           <Link href="/team">Team</Link>

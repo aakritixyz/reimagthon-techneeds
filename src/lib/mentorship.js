@@ -1,8 +1,18 @@
+import webImage from "@/assets/WEB.jpeg";
+import appImage from "@/assets/app.jpg";
+import cppImage from "@/assets/C.png";
+import javaImage from "@/assets/JAVA.jpeg";
+import mlImage from "@/assets/ML.png";
+import arImage from "@/assets/ar.png";
+
 export const trackGroups = ["Development", "DSA", "Emerging tech"];
 
 export const tracks = [
   {
     slug: "web-development",
+    mentor: "Vidusi Agarwal",
+    image: webImage,
+    imageAlt: "Desktop computer displaying code in a web development workspace.",
     name: "Web development",
     group: "Development",
     icon: "browser",
@@ -15,6 +25,9 @@ export const tracks = [
   },
   {
     slug: "app-development",
+    mentor: "Muskan Manvi",
+    image: appImage,
+    imageAlt: "Mobile device showing an app development interface.",
     name: "App development",
     group: "Development",
     icon: "phone",
@@ -27,6 +40,9 @@ export const tracks = [
   },
   {
     slug: "dsa-c-cpp",
+    mentor: "Shefali Kaushal",
+    image: cppImage,
+    imageAlt: "Illustrated coding workspace for learning data structures and algorithms.",
     name: "DSA in C/C++",
     group: "DSA",
     icon: "braces",
@@ -39,6 +55,9 @@ export const tracks = [
   },
   {
     slug: "dsa-java",
+    mentor: "Tavleen Kaurv",
+    image: javaImage,
+    imageAlt: "Java programming track illustration.",
     name: "DSA in Java",
     group: "DSA",
     icon: "coffee",
@@ -51,6 +70,9 @@ export const tracks = [
   },
   {
     slug: "machine-learning",
+    mentor: "Sripriya Aggarwal",
+    image: mlImage,
+    imageAlt: "Data visualization and model analytics illustration.",
     name: "Machine learning",
     group: "Emerging tech",
     icon: "chip",
@@ -63,6 +85,9 @@ export const tracks = [
   },
   {
     slug: "ar-vr-mentorship",
+    mentor: "Snighdha",
+    image: arImage,
+    imageAlt: "A person exploring an immersive experience with a virtual reality headset.",
     name: "AR/VR mentorship",
     group: "Emerging tech",
     icon: "headset",

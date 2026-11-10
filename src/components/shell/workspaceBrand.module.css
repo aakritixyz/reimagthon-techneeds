@@ -1,0 +1,11 @@
+.brand { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; color: #163e5e; font-family: var(--tn-sans); line-height: 1.15; text-decoration: none; }
+.brand:hover { color: #296c9e; }
+.mark { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; overflow: hidden; border: 1px solid #d0e0ec; border-radius: 12px; background: #f6f9ff; }
+.mark img { display: block; width: 48px; height: 48px; object-fit: contain; transform: scale(1.2); transform-origin: center; }
+.wordmark { font-size: 20px; font-weight: 750; letter-spacing: -.035em; }
+.wordmark small { display: block; margin-top: 5px; color: #4c7796; font: 650 8px/1.4 var(--tn-mono); letter-spacing: .12em; text-transform: uppercase; }
+.dark { color: #e6f2fd; }
+.dark:hover { color: #fff; }
+.dark .wordmark small { color: #a3c4da; }
+.dark .mark { border-color: #aacde04d; }
+@media (max-width: 480px) { .mark, .mark img { width: 42px; height: 42px; } .brand { gap: 9px; } .wordmark { font-size: 17px; } }

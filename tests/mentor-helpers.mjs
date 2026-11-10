@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import { parseMenteeCsv, inputDate, utcDate } from '../src/components/mentor/helpers.js';
+const valid=parseMenteeCsv('name,email\n"Agarwal, Vidushi",vidushi@example.test\nNew Learner,learner@example.test');
+assert.equal(valid.rows[0].name,'Agarwal, Vidushi');assert.deepEqual(valid.errors,[]);
+assert.ok(parseMenteeCsv('name,email\nOne,a@example.test\nTwo,A@example.test').errors.some(e=>e.includes('duplicate')));
+assert.ok(parseMenteeCsv('name,email\nOne,no-at-sign').errors.length);
+assert.ok(parseMenteeCsv('name,email\n"unfinished,name@example.test').errors.length);
+assert.ok(parseMenteeCsv('wrong,columns\nName,email@example.test').errors.length);
+assert.equal(utcDate('2026-11-14T23:59'),'2026-11-14T18:29:00.000Z');assert.equal(inputDate('2026-11-14T18:29:00.000Z'),'2026-11-14T23:59');
+console.log('PASS CSV quoting/validation and IST/UTC date conversion.');

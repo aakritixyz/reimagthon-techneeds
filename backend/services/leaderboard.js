@@ -1,3 +1,5 @@
+const { publicName } = require('./menteeLearning');
+const { streakFor } = require('./progress');
 const day = 24 * 60 * 60 * 1000;
 const ist = 330 * 60 * 1000;
 const tracks = {
@@ -41,7 +43,7 @@ function rank(entries, start, end = Infinity) {
 
 function buildStandings(mentees, { period, track, search, viewerId, now }) {
   const matchTrack = tracks[track];
-  const entries = mentees.map((mentee) => {
+  const entries = mentees.filter(m => m.showOnBoard !== false || String(m._id) === viewerId).map((mentee) => {
     const programs = mentee.programs.filter(Boolean);
     const completions = mentee.completedResources ?? [];
     const scopes = programs.filter((program) => !matchTrack || matchTrack.test(program.name));
@@ -49,7 +51,7 @@ function buildStandings(mentees, { period, track, search, viewerId, now }) {
     const scoped = matchTrack
       ? completions.filter((item) => scopedIds.has(String(item.resource?.program)))
       : completions;
-    const streak = mentee.streak || 0;
+    const streak = streakFor(completions, now);
     const badges = [];
     if (streak >= 7) badges.push(streak >= 30 ? '30-day streak' : streak >= 14 ? '14-day streak' : '7-day streak');
     if (scoped.some((item) => item.resource?.type === 'project' && item.verified)) badges.push('First project');
@@ -58,7 +60,8 @@ function buildStandings(mentees, { period, track, search, viewerId, now }) {
     }
     return {
       id: String(mentee._id),
-      name: mentee.name,
+      name: publicName(mentee.name),
+      visible: mentee.showOnBoard !== false,
       tracks: scopes.map((program) => program.name),
       streak,
       badges,
@@ -70,8 +73,8 @@ function buildStandings(mentees, { period, track, search, viewerId, now }) {
   });
 
   const { start, previousStart, previousEnd } = periodBounds(now, period);
-  const current = rank(entries, start);
-  const previous = new Map(rank(entries, previousStart, previousEnd).map(({ entry }, index) => [entry.id, index + 1]));
+  const current = rank(entries.filter(e => e.visible), start);
+  const previous = new Map(rank(entries.filter(e => e.visible), previousStart, previousEnd).map(({ entry }, index) => [entry.id, index + 1]));
   const standings = current.map(({ entry, score }, index) => {
     const rank = index + 1;
     return {
@@ -92,7 +95,8 @@ function buildStandings(mentees, { period, track, search, viewerId, now }) {
     rows: standings.filter((row) => row.name.toLocaleLowerCase('en-IN').includes(query)).slice(0, 200),
     you: viewer ? {
       rank: you?.rank ?? null,
-      score: you?.score ?? 0,
+      score: you?.score ?? viewer.scores.filter(s => !s.time || s.time >= start).reduce((sum,s) => sum+s.points,0),
+      optedOut: !viewer.visible,
       pointsToPass: ahead ? Math.floor(ahead.score - you.score) + 1 : null,
     } : null,
   };

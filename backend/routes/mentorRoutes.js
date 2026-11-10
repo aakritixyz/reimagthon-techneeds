@@ -53,8 +53,8 @@ router.get('/programs', authenticateAdmin, async (req, res) => {
 router.post('/mentors/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    const mentor = await Mentor.findOne({ email });
-    if (!mentor || !(await bcrypt.compare(password, mentor.password))) {
+    const mentor = typeof email === 'string' ? await Mentor.findOne({ email: email.trim().toLowerCase() }) : null;
+    if (!mentor || typeof password !== 'string' || !(await bcrypt.compare(password, mentor.password))) {
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     const token = jwt.sign({ id: mentor._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -105,113 +105,6 @@ router.post('/programs/:programId/add-mentor', authenticateAdmin, async (req, re
 });
 
 
-// Add Resource (Only for assigned programs)
-router.post('/resources', authenticate, async (req, res) => {
-  try {
-    const program = await Program.findById(req.body.program);
-    if (!program || !program.mentors.includes(req.mentor._id)) {
-      return res.status(403).json({ error: 'Not authorized for this program' });
-    }
-
-    const resource = new Resource({
-      ...req.body,
-      addedBy: req.mentor._id
-    });
-
-    await resource.save();
-
-    program.resources.push(resource._id);
-
-    await program.save();
-    
-    res.status(201).json(resource);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.post('/resources/quiz', authenticate, async (req, res) => {
-  try {
-    const { title, program, questions, startTime, endTime, maxScore, revealScores } = req.body;
-    if (!Array.isArray(questions) || !questions.length || !(new Date(startTime) < new Date(endTime))) {
-      return res.status(400).json({ error: 'A quiz needs questions and a valid opening and closing time.' });
-    }
-
-    const programDoc = await Program.findById(program);
-    if (!programDoc || !programDoc.mentors.includes(req.mentor._id)) {
-      return res.status(403).json({ error: 'Not authorized for this program' });
-    }
-
-    // Step 1: Create the Resource with type 'quiz'
-    const resource = new Resource({
-      title,
-      type: 'quiz',
-      program,
-      maxScore,
-      addedBy: req.mentor._id,
-      deadline: endTime 
-    });
-
-    await resource.save();
-
-    const quiz = new Quiz({
-      resource: resource._id,
-      questions,
-      startTime,
-      endTime,
-      revealScores
-    });
-
-    await quiz.save();
-
-    programDoc.resources.push(resource._id);
-    await programDoc.save();
-
-    res.status(201).json({ message: 'Quiz resource created', resource, quiz });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-// Mentor adds a mentee (with auto-generated credentials)
-router.post('/mentees', authenticate, async (req, res) => {
-  try {
-    const { email, name, enrollmentNumber, programId } = req.body;
-    const mentor = req.mentor;
-
-    // Check if mentor is assigned to the program
-    const program = await Program.findById(programId);
-    if (!program || !program.mentors.includes(mentor._id)) {
-      return res.status(403).json({ error: 'Not authorized for this program' });
-    }
-
-    // Generate a random password (or let mentor set one)
-    const tempPassword = randomBytes(12).toString('base64url');
-    
-    const mentee = new Mentee({
-      email,
-      name,
-      enrollmentNumber: enrollmentNumber?.trim() || `TN-${randomBytes(8).toString('hex').toUpperCase()}`,
-      password: await bcrypt.hash(tempPassword, 12),
-      createdBy: mentor._id,
-      programs: [programId]
-    });
-    await mentee.save();
-
-    // Optional: Send email to mentee with credentials
-    // await sendWelcomeEmail(mentee.email, enrollmentNumber, tempPassword);
-
-    res.status(201).json({
-      mentee: { _id: mentee._id, name: mentee.name, enrollmentNumber: mentee.enrollmentNumber },
-      tempPassword
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 // Get all mentees for a program
 router.get('/:programId/mentees', authenticate, async (req, res) => {
   try {
@@ -234,58 +127,6 @@ router.get('/:programId/resources', authenticate, async (req, res) => {
     res.json(resources);
   } catch (err) {
     res.status(500).json({ error: err.message });
-  }
-});
-
-// PATCH /mentees/:menteeId/resources/:resourceId/verify
-router.patch('/:menteeId/resources/:resourceId/verify', authenticate, async (req, res) => {
-  try {
-    const { menteeId, resourceId } = req.params;
-    const { score } = req.body;
-
-    const resource = await Resource.findById(resourceId);
-    if (!resource) return res.status(404).json({ error: 'Resource not found' });
-
-    if (!req.mentor.programs.includes(resource.program)) return res.status(403).json({ error: 'Not assigned to this program' });
-    if (typeof score !== 'number' || !Number.isFinite(score) || score < 0 || score > resource.maxScore) {
-      return res.status(400).json({ error: 'Enter a score between zero and the maximum.' });
-    }
-
-    if (resource.type !== 'project') {
-      return res.status(400).json({ error: 'Only project-type resources can be verified' });
-    }
-
-    if (resource.isLocked) {
-      return res.status(403).json({ error: 'Resource is currently locked' });
-    }
-
-    const mentee = await Mentee.findById(menteeId);
-    if (!mentee || !mentee.programs.includes(resource.program)) return res.status(404).json({ error: 'Mentee not found' });
-
-    const submission = mentee.completedResources.find(
-      (entry) => entry.resource.toString() === resourceId
-    );
-
-    if (!submission) {
-      return res.status(400).json({ error: 'Project not yet submitted by this mentee' });
-    }
-
-    if (submission.verified) {
-      return res.status(400).json({ error: 'This project has already been verified' });
-    }
-
-    const finalScore = Math.min(score, resource.maxScore);
-    submission.score = finalScore;
-    submission.verified = true;
-    submission.scoredOn = new Date();
-
-    mentee.totalScore += finalScore;
-    await mentee.save();
-
-    res.json({ message: 'Project verified and scored', finalScore });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
   }
 });
 

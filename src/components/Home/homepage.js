@@ -1,5 +1,12 @@
+import Image from "next/image";
+import LogoOrbit from "@/components/LogoOrbit";
 import Link from "next/link";
+import glimpses from "@/assets/Glimpse.png";
+import rocket from "@/assets/rocket.png";
+import connectedTech from "@/assets/hero-connected-tech.png";
+import { tracks } from "@/lib/mentorship";
 import TrackCatalog from "./trackCatalog";
+import StudentReviews from "./studentReviews";
 import { Icon } from "../shell/icons";
 import styles from "./reimagine.module.css";
 
@@ -10,16 +17,19 @@ const event = {
   url: "https://www.communityx.in/events/innovortex-40",
 };
 
-const benefits = [
-  { icon: "people", title: "Learn with peers", description: "Get guidance from mentors and learn alongside your cohort." },
-  { icon: "layers", title: "Build hands-on projects", description: "Put your skills to work on projects you can show." },
-  { icon: "chart", title: "Track your progress", description: "See what you’ve finished and what’s due next." },
+const offerings = [
+  "In-Depth Insights",
+  "Educational Content",
+  "Community Engagement",
+  "Hackathons",
+  "Speaker Sessions",
 ];
 
-const previewResources = [
-  { icon: "play", type: "VIDEO", title: "Responsive layouts", status: "Complete", done: true },
-  { icon: "checklist", type: "QUIZ", title: "CSS fundamentals", status: "Complete", done: true },
-  { icon: "code", type: "PROJECT", title: "Build a portfolio", status: "Next up" },
+const milestones = [
+  { value: "1,200+", label: "Mentees trained" },
+  { value: "50+", label: "Mentors" },
+  { value: "10+", label: "Mentorship cohorts" },
+  { value: String(tracks.length), label: "Learning tracks" },
 ];
 
 export default function Homepage() {
@@ -33,62 +43,64 @@ export default function Homepage() {
           </div>
         </aside>
       )}
-      <section className={styles.hero}>
+      <section className={styles.hero} aria-labelledby="hero-title">
         <div className={`${styles.wrap} ${styles.heroGrid}`}>
           <div className={styles.intro}>
             <p className={styles.eyebrow}><span /> THE TECH COMMUNITY AT IGDTUW</p>
-            <h1>Learn tech.<br /><em>Build together.</em></h1>
+            <h1 id="hero-title">Learn tech.<br /><em>Build together.</em></h1>
             <p className={styles.lead}>Find your direction in tech with peer mentorship and hands-on projects at IGDTUW.</p>
             <div className={styles.actions}>
-              <a className="tn-button" href="#mentorship">Explore mentorship <Icon name="arrow" /></a>
-              <div className={styles.portal}>
-                <Link href="/techboard" aria-describedby="techboard-description">Open Techboard <Icon name="diagonal" /></Link>
-                <span id="techboard-description">Workspace for current cohorts</span>
-              </div>
+              <a className={styles.primaryAction} href="#mentorship">
+                <span className={styles.actionIcon}><Icon name="layers" /></span>
+                <span><strong>Explore mentorship</strong><small>Find your learning track</small></span>
+                <Icon name="arrow" />
+              </a>
+              <Link className={styles.secondaryAction} href="/techboard">
+                <span className={styles.actionIcon}><Icon name="chart" /></span>
+                <span><strong>Open Techboard</strong><small>Workspace for current cohorts</small></span>
+                <Icon name="diagonal" />
+              </Link>
             </div>
-            <ul className={styles.proof} aria-label="TechNeeds community milestones">
-              <li><strong>1,200+</strong> mentees trained</li>
-              <li><strong>50+</strong> mentors</li>
-              <li><strong>10+</strong> cohorts</li>
-            </ul>
           </div>
 
-          <ul className={styles.benefits} aria-label="What you can do at TechNeeds">
-            {benefits.map(({ icon, title, description }) => (
-              <li key={title}>
-                <span className={styles.benefitIcon}><Icon name={icon} /></span>
-                <div><strong>{title}</strong><p>{description}</p></div>
-              </li>
-            ))}
-          </ul>
-
-          <figure className={styles.preview}>
-            <figcaption className={styles.previewCaption}>
-              <span><i /> TECHBOARD / COHORT PREVIEW</span>
-              <span aria-hidden="true">FIG. 01</span>
-            </figcaption>
-            <div className={styles.board} aria-hidden="true">
-              <div className={styles.boardHeader}>
-                <span className={styles.boardIcon}><Icon name="code" /></span>
-                <div className={styles.boardTitle}><small>MENTORSHIP TRACK</small><strong>Web Development</strong></div>
-                <span className={styles.example}>SAMPLE</span>
-              </div>
-              <div className={styles.progress}>
-                <div><span>Cohort progress</span><span>2 of 3 complete</span></div>
-                <div className={styles.progressTrack}><span /></div>
-              </div>
-              <ul className={styles.boardTasks}>
-                {previewResources.map(({ icon, type, title, status, done }) => (
-                  <li key={type}>
-                    <span className={styles.taskIcon}><Icon name={icon} /></span>
-                    <div className={styles.taskTitle}><small>{type}</small><strong>{title}</strong></div>
-                    <span className={done ? styles.done : styles.upNext}>{done && <Icon name="check" />}{status}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <p className={styles.previewNote} aria-hidden="true"><span>TECHNEEDS IGDTUW</span><span>01 VIDEO · 01 QUIZ · 01 PROJECT</span></p>
+          <figure className={styles.foregroundArt}>
+            <Image src={connectedTech} alt="Hands connecting vintage computers and telephones through a network of wires." sizes="(max-width: 620px) 90vw, 420px" priority />
+            <figcaption><span>CONNECTED BY TECH</span><span>FIG. 01</span></figcaption>
           </figure>
+
+          <aside className={styles.glance} aria-labelledby="glance-title">
+            <div className={styles.glanceHead}>
+              <h2 id="glance-title">TechNeeds at a glance</h2>
+              <span aria-hidden="true">OUR COMMUNITY</span>
+            </div>
+            <dl>
+              {milestones.map(({ value, label }) => (
+                <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+              ))}
+            </dl>
+          </aside>
+
+
+        </div>
+      </section>
+
+      <section className={styles.mission} aria-labelledby="mission-title">
+        <div className={`${styles.wrap} ${styles.missionGrid}`}>
+          <div className={styles.animationSpace} data-animation-slot="mission">
+            <LogoOrbit />
+          </div>
+          <div className={styles.missionContent}>
+            <p className={styles.eyebrow}><span /> ABOUT TECHNEEDS</p>
+            <h2 id="mission-title">Our Mission</h2>
+            <p className={styles.missionStatement}>To be the go-to resource for anyone seeking to understand, explore, and stay updated on the ever-evolving world of technology.</p>
+            <h3>What We Offer</h3>
+            <ul className={styles.offerings}>
+              {offerings.map((offering) => (
+                <li key={offering}><Image src={rocket} alt="" width={23} height={23} /><span>{offering}</span></li>
+              ))}
+            </ul>
+            <p className={styles.communityVision}>As the community grows and prepares for upcoming high-impact mentorship programs, the platform requires a modern, seamless, and scalable overhaul to accommodate multi-tiered role hierarchies, granular resource tracking, and personalized AI-driven participant profiles.</p>
+          </div>
         </div>
       </section>
 
@@ -115,6 +127,21 @@ export default function Homepage() {
           </div>
         </div>
       </section>
+      <section className={styles.gallery} id="glimpses" aria-labelledby="glimpses-title">
+        <div className={styles.wrap}>
+          <div className={styles.sectionHead}>
+            <p className={styles.eyebrow}><span /> LIFE AT TECHNEEDS</p>
+            <h2 id="glimpses-title">A glimpse of our community.</h2>
+            <p className={styles.sectionIntro}>Workshops, coding sessions, and the people who make learning together possible.</p>
+          </div>
+          <figure className={styles.galleryFrame}>
+            <div className={styles.galleryCaption}><span>FIG. 02 / COMMUNITY ARCHIVE</span><span>TECHNEEDS IGDTUW</span></div>
+            <Image src={glimpses} alt="A collage from TechNeeds events, featuring classroom workshops, community group photos, speakers, online learning sessions, and the Summer Skill Sprint Challenge." sizes="(max-width: 1050px) 96vw, 1216px" />
+            <figcaption>Moments from TechNeeds workshops, events, and online sessions.</figcaption>
+          </figure>
+        </div>
+      </section>
+      <StudentReviews />
     </main>
   );
 }
