@@ -1,0 +1,22 @@
+.workspace { min-height: 70vh; padding: 52px 18px 72px; color: var(--tn-ink); background: #f0f7ff; }
+.inner { max-width: 960px; margin-inline: auto; }
+.heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+.heading p { margin: 0 0 10px; color: var(--tn-blue); font: 700 11px/1.4 var(--tn-mono); letter-spacing: .14em; }
+.heading h1 { margin: 0 0 6px; font-size: clamp(36px, 6vw, 56px); font-weight: 770; letter-spacing: -.055em; }
+.heading span, .card p { color: var(--tn-muted); }
+.forms { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.card { border: 1px solid #d6e5f3; border-radius: 15px; padding: 22px; background: #fff; }
+.card h2 { margin: 0 0 15px; font-size: 22px; font-weight: 740; letter-spacing: -.028em; }
+.card label { display: block; max-width: 480px; margin-bottom: 12px; color: var(--tn-muted); font-size: 14px; font-weight: 650; }
+.card input, .card select { display: block; width: 100%; min-height: 42px; margin-top: 5px; border: 1px solid #c6d9e9; border-radius: 8px; padding: 8px 10px; background: #f7fbff; color: var(--tn-ink); }
+.card button:disabled, .heading button:disabled { opacity: .65; }
+.credentials { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 16px; padding: 12px; border-radius: 8px; background: #e9f4ff; overflow-wrap: anywhere; }
+.credentials code { color: #16446a; }
+.cohort { border-top: 1px solid #d6e5f3; padding-block: 14px; }
+.cohort h3 { font-size: 19px; font-weight: 730; }
+.assign { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 8px; }
+.assign label { margin: 0; }
+.error { border: 1px solid #bad3ec; border-radius: 8px; padding: 10px 13px; background: #e2effd; color: var(--tn-ink); }
+@media (max-width: 620px) {
+  .forms { grid-template-columns: 1fr; }
+}

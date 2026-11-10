@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 480" fill="none">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="620" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071E39"/><stop offset="1" stop-color="#103C66"/>
+    </linearGradient>
+    <radialGradient id="atmosphere" cx="0" cy="0" r="1" gradientTransform="translate(325 236) rotate(90) scale(219 244)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#298ACC" stop-opacity=".62"/><stop offset="1" stop-color="#298ACC" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="globe" cx="0" cy="0" r="1" gradientTransform="translate(276 158) rotate(55) scale(262)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2F8CC5"/><stop offset=".49" stop-color="#1A5589"/><stop offset="1" stop-color="#0A2547"/>
+    </radialGradient>
+    <pattern id="grid" width="29" height="29" patternUnits="userSpaceOnUse">
+      <path d="M29 0H0v29" stroke="#86BEEC" stroke-opacity=".14"/>
+      <circle cx="0" cy="0" r="1.25" fill="#97CDF6" fill-opacity=".36"/>
+    </pattern>
+    <clipPath id="sphere"><circle cx="326" cy="235" r="139"/></clipPath>
+  </defs>
+  <path fill="url(#background)" d="M0 0h620v480H0z"/>
+  <path fill="url(#atmosphere)" d="M0 0h620v480H0z"/>
+  <path fill="url(#grid)" d="M0 0h620v480H0z"/>
+  <g stroke="#6AABE2" stroke-opacity=".46">
+    <circle cx="326" cy="235" r="167" stroke-dasharray="2 6"/>
+    <circle cx="326" cy="235" r="188" stroke-opacity=".25"/>
+    <path d="M326 32v24m0 359v27M123 235h24m359 0h26"/>
+    <ellipse cx="326" cy="235" rx="242" ry="76" transform="rotate(-26 326 235)"/>
+    <ellipse cx="326" cy="235" rx="226" ry="91" transform="rotate(25 326 235)" stroke-dasharray="3 7"/>
+  </g>
+  <circle cx="326" cy="235" r="139" fill="url(#globe)" stroke="#96D7FF" stroke-width="1.6"/>
+  <g clip-path="url(#sphere)">
+    <g transform="rotate(18 326 235)" stroke="#8DD0FB" stroke-opacity=".53">
+      <ellipse cx="326" cy="235" rx="106" ry="139"/>
+      <ellipse cx="326" cy="235" rx="67" ry="139"/>
+      <ellipse cx="326" cy="235" rx="27" ry="139"/>
+      <path d="M188 235c67 24 209 24 277 0m-271-44c66 21 196 21 264 0m-245-38c60 18 168 18 226 0m-197-34c47 15 122 15 169 0M195 278c65 21 194 21 261 0m-238 39c59 18 154 18 214 0m-181 34c44 12 102 12 146 0"/>
+    </g>
+    <g fill="#B8E4FF" fill-opacity=".27" stroke="#B8E4FF" stroke-opacity=".39" stroke-width=".8" stroke-linejoin="round">
+      <path d="m187 177 24-13 20 2 11-12 19 4 13-11 14 4 5 12-13 8-7 19-16 4-13 19-3 15-10 3-8-11-14-4-4-10-14-2-8-10z"/>
+      <path d="m239 230 11 2 10 14 12 3-4 7-15-5-8-12zM269 250l21 8 6 14 22 8 4 14-14 12-9 23-15 14-4 18-11-7 1-20-7-19-3-18-9-14 5-16z"/>
+      <path d="m285 134 13-16 16 1 9 10-9 14-4 14-14-1-2-11zM348 186l9-12 16 3 8-14 10 3 8-15 23-7 22 12 21 23-9 17-13 1-5 9-16-1-13 13-10-2-1-15-16 1-9 10-13-5-4-9-14 2z"/>
+      <path d="m353 213 18-2 13 12 12 3-4 12-11 6-4 20-13 18-11-7-3-13-7-9-3-21zM420 222l14 9 3 14 10 6-2 8-15-5-9-13zM430 290l13-9 20 4 9 19-10 13-13-6-15 5-13-9z"/>
+    </g>
+    <g stroke="#BBE9FF" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M240 184l44 31 39-14 42 36 58-44m-101 8 5-51m38 87 24 48m-105-70-7 72m146-94 24 53"/>
+    </g>
+    <g fill="#D7F2FF" stroke="#55B9FD" stroke-width="2">
+      <circle cx="240" cy="184" r="4"/><circle cx="284" cy="215" r="4"/><circle cx="323" cy="201" r="5"/><circle cx="327" cy="150" r="4"/><circle cx="365" cy="237" r="5"/><circle cx="423" cy="193" r="5"/><circle cx="447" cy="246" r="4"/><circle cx="389" cy="285" r="4"/><circle cx="277" cy="287" r="4"/>
+    </g>
+  </g>
+  <path d="M128 355c49 4 125-15 204-54 113-56 193-128 189-167" stroke="#A1D9FF" stroke-opacity=".72"/>
+  <path d="M138 136h45l57 48m183 9 48-39h36M389 285l47 44h63" stroke="#8CCBFA" stroke-opacity=".64"/>
+  <g fill="#B1E1FF">
+    <circle cx="138" cy="136" r="3"/><circle cx="507" cy="154" r="3"/><circle cx="499" cy="329" r="3"/><circle cx="521" cy="134" r="4"/><circle cx="128" cy="355" r="3"/>
+  </g>
+  <g stroke="#86C4F1" stroke-opacity=".55">
+    <path d="M38 85v-9h9m535 0h9v9M38 394v9h9m535 0h9v-9"/>
+    <path d="M83 215h12m-6-6v12m449 30h12m-6-6v12M200 89h12m-6-6v12"/>
+  </g>
+</svg>
